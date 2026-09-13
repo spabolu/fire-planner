@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local financial snapshots and saved scenarios never belong in git.
+/.local/
+/.artifacts/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite*
+*.pdf
+*.tfstate*
+!.env.example
