@@ -144,7 +144,10 @@ production dependencies, and a standalone build on pull requests. Only trusted
 - Environment secrets: `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`.
 - Environment variables: `AZURE_WEBAPP_NAME`, `APP_URL`.
 - Deployment identity: Website Contributor on this web app only.
-- Federated subject: `repo:<owner>/<repo>:environment:production`.
+- Federated subject: match the repository's actual OIDC subject exactly.
+  Repositories using immutable subjects include owner/repository numeric IDs;
+  inspect `gh api repos/<owner>/<repo>/actions/oidc/customization/sub` rather
+  than assuming the older `repo:<owner>/<repo>:environment:production` format.
 
 The standalone artifact excludes local inputs, credentials, and PDFs. Azure
 runs the schema migration before starting the app. YNAB and database credentials
