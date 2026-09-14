@@ -7,8 +7,6 @@ param ownerObjectId string
 @description('Additional tenant user object IDs allowed to access the same shared planner.')
 param additionalUserObjectIds array = []
 param signInClientId string
-param authIdentityClientId string
-param authIdentityResourceId string
 param postgresAdmin string = 'planneradmin'
 @secure()
 param postgresAdminPassword string
@@ -16,6 +14,9 @@ param postgresAdminPassword string
 param databaseUrl string
 @secure()
 param ynabToken string
+@secure()
+@description('Entra confidential-client sign-in secret, stored only in App Service settings.')
+param signInClientSecret string
 var allowedUserObjectIds = union([ownerObjectId], additionalUserObjectIds)
 
 resource plan 'Microsoft.Web/serverfarms@2024-11-01' = {
@@ -52,10 +53,6 @@ resource app 'Microsoft.Web/sites@2024-11-01' = {
   name: appName
   location: location
   kind: 'app,linux'
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: { '${authIdentityResourceId}': {} }
-  }
   properties: {
     serverFarmId: plan.id
     httpsOnly: true
@@ -73,7 +70,7 @@ resource app 'Microsoft.Web/sites@2024-11-01' = {
         { name: 'APP_ORIGIN', value: 'https://${appName}.azurewebsites.net' }
         { name: 'DATABASE_URL', value: databaseUrl }
         { name: 'YNAB_ACCESS_TOKEN', value: ynabToken }
-        { name: 'OVERRIDE_USE_MI_FIC_ASSERTION_CLIENTID', value: authIdentityClientId }
+        { name: 'MICROSOFT_PROVIDER_AUTHENTICATION_SECRET', value: signInClientSecret }
         { name: 'WEBSITE_AUTH_AAD_ALLOWED_TENANTS', value: tenantId }
         { name: 'NEXT_TELEMETRY_DISABLED', value: '1' }
         { name: 'WEBSITE_RUN_FROM_PACKAGE', value: '1' }
@@ -99,7 +96,7 @@ resource auth 'Microsoft.Web/sites/config@2024-11-01' = {
         enabled: true
         registration: {
           clientId: signInClientId
-          clientSecretSettingName: 'OVERRIDE_USE_MI_FIC_ASSERTION_CLIENTID'
+          clientSecretSettingName: 'MICROSOFT_PROVIDER_AUTHENTICATION_SECRET'
           openIdIssuer: '${environment().authentication.loginEndpoint}${tenantId}/v2.0'
         }
         validation: {
@@ -110,7 +107,7 @@ resource auth 'Microsoft.Web/sites/config@2024-11-01' = {
         }
       }
     }
-    login: { tokenStore: { enabled: false } }
+    login: { tokenStore: { enabled: true } }
     httpSettings: { requireHttps: true }
   }
 }

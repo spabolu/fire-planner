@@ -105,11 +105,14 @@ outbound IPs and any temporary administration IP, not all Azure resources.
 Authentication requires:
 
 1. A single-tenant Microsoft Entra app registration with the web redirect URI
-   `https://<app-name>.azurewebsites.net/.auth/login/aad/callback`.
-2. A dedicated user-assigned identity attached to the web app. Its principal
-   is trusted by the sign-in registration through a federated credential
-   (`api://AzureADTokenExchange` audience). Easy Auth uses its client ID through
-   `OVERRIDE_USE_MI_FIC_ASSERTION_CLIENTID`, avoiding an expiring login secret.
+   `https://<app-name>.azurewebsites.net/.auth/login/aad/callback`. Enable ID-token
+   issuance for App Service's hybrid response; leave implicit access-token
+   issuance disabled.
+2. A sign-in client secret stored only in the App Service setting
+   `MICROSOFT_PROVIDER_AUTHENTICATION_SECRET` (the secure Bicep parameter is
+   `signInClientSecret`). Enable the Easy Auth token store. Track the secret's
+   expiration in Entra and rotate it before expiry. GitHub deployment uses a
+   separate managed identity and OIDC, not this sign-in secret.
 3. Easy Auth enabled with authentication required and an allowed-principal
    policy restricted to the owner's tenant object ID. Only `/api/health` is public.
 4. `APP_AUTH_MODE=azure`, comma-separated `APP_ALLOWED_PRINCIPAL_IDS`, and the exact HTTPS
