@@ -40,12 +40,12 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
       - run: npm run build
       - run: npm run package:azure
+      - run: tar -czf .artifacts/azure-app.tar.gz -C .artifacts/deploy .
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: github.event_name != 'pull_request'
         with:
           name: azure-app
-          path: .artifacts/deploy
-          include-hidden-files: true
+          path: .artifacts/azure-app.tar.gz
           retention-days: 3
 
   deploy:
@@ -66,7 +66,8 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: azure-app
-          path: deploy
+          path: artifact
+      - run: mkdir deploy && tar -xzf artifact/azure-app.tar.gz -C deploy
       - uses: azure/login@8216e11d8cd9b42fe925c852af8e76311ff067ac # v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
